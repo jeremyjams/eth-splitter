@@ -9,7 +9,7 @@ contract Splitter {
   event WithdrawBalanceEvent(address withdrawer, uint amount);
 
   constructor() public {
-    owner = msg.sender;
+    owner = msg.sender;//isnt required, just for information
   }
 
   function viewBalance() public view returns (uint balance) {
