@@ -2,7 +2,6 @@ pragma solidity >=0.4.21 <0.6.0;
 
 import "./Ownable.sol";
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
-// Remix : import "github.com/OpenZeppelin/zeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract Splitter is Ownable {
 
@@ -19,14 +18,11 @@ contract Splitter is Ownable {
         require(msg.value > 0);
 
         //Probably should remove this block to save gas since we just talking about 1wei
-        uint donation = msg.value;
         if (SafeMath.mod(msg.value, 2) != 0) {//odd amount
-            balances[msg.sender]++;
-            //sender receives 1 wei back in his balance
-            donation--;
+            balances[msg.sender]++;//sender receives 1 wei back in his Splitter balance
         }
 
-        uint halfDonation = SafeMath.div(donation, 2);
+        uint halfDonation = SafeMath.div(msg.value, 2);
 
         balances[beneficiaryA] += halfDonation;
         balances[beneficiaryB] += halfDonation;
