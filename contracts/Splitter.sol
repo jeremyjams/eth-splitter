@@ -2,8 +2,9 @@ pragma solidity >=0.4.21 <0.6.0;
 
 import "./Ownable.sol";
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./Pausable.sol";
 
-contract Splitter is Ownable {
+contract Splitter is Ownable, Pausable {
 
     mapping(address => uint) public balances;
 
@@ -12,14 +13,15 @@ contract Splitter is Ownable {
 
     constructor() public {}
 
-    function splitDonation(address beneficiaryA, address beneficiaryB) public payable returns (bool success) {
+    function splitDonation(address beneficiaryA, address beneficiaryB) public onlyOn payable returns (bool success) {
         require(beneficiaryA != address(0));
         require(beneficiaryB != address(0));
         require(msg.value > 0);
 
         //Probably should remove this block to save gas since we just talking about 1wei
         if (SafeMath.mod(msg.value, 2) != 0) {//odd amount
-            balances[msg.sender]++;//sender receives 1 wei back in his Splitter balance
+            //sender receives 1 wei back in his Splitter balance
+            balances[msg.sender]++;
         }
 
         uint halfDonation = SafeMath.div(msg.value, 2);
@@ -31,7 +33,7 @@ contract Splitter is Ownable {
         return true;
     }
 
-    function withdraw() public returns (bool success) {
+    function withdraw() public onlyOn returns (bool success) {
         require(balances[msg.sender] > 0);
 
         uint withdrawal = balances[msg.sender];
@@ -41,6 +43,10 @@ contract Splitter is Ownable {
         require(_success, "Transfer failed.");
 
         return true;
+    }
+
+    function kill() public onlyOwner {
+        selfdestruct(msg.sender);
     }
 
 }
