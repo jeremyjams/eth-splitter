@@ -1,16 +1,15 @@
 pragma solidity >=0.4.21 <0.6.0;
+import "./Ownable.sol";
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 // Remix : import "github.com/OpenZeppelin/zeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract Splitter {
+contract Splitter is Ownable {
 
-  address public owner;
   mapping (address => uint) public balances;
   event SplitDonationEvent(address indexed giver, uint donation, address beneficiaryA, address beneficiaryB);
   event WithdrawBalanceEvent(address indexed withdrawer, uint amount);
 
   constructor() public {
-    owner = msg.sender;//isnt required, just for information
   }
 
   function splitDonation(address beneficiaryA, address beneficiaryB)
@@ -43,7 +42,7 @@ contract Splitter {
     emit WithdrawBalanceEvent(msg.sender, withdrawal);
     (bool _success, ) = msg.sender.call.value(withdrawal)("");
     require(_success, "Transfer failed.");
-    
+
     return true;
   }
 
