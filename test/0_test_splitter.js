@@ -4,6 +4,8 @@ Promise.promisifyAll(web3.eth, { suffix: "Promise" });
 
 // ganache-cli --accounts=10 --host=0.0.0.0
 
+//TODO  Use https://www.npmjs.com/package/truffle-assertions
+
 contract("Splitter", function() {
     describe("Testting Splitter contract", function() {
 
@@ -18,7 +20,7 @@ contract("Splitter", function() {
         return Splitter.new()
             .then(_instance => {
                 instance = _instance;
-                return instance.owner();
+                return instance.getOwner();
             })
             .then(_owner => {
               owner = _owner;
@@ -55,14 +57,14 @@ contract("Splitter", function() {
               console.log(balance + " ETH: carol balance");
               return assert.isTrue(balance.toString(10) > "10", "Carol is broke");
             })
-            .then(success => instance.viewBalance.call(alice, {from: anyone}))
+            .then(success => instance.balances.call(alice, {from: anyone}))
             .then(balance => {
               assert.equal(balance, 0, "Alice initial Splitter balance should be 0")
-              return instance.viewBalance(bob, {from: anyone})
+              return instance.balances(bob, {from: anyone})
             })
             .then(balance => {
               assert.equal(balance, 0, "Bob initial Splitter balance should be 0")
-              return instance.viewBalance(carol, {from: anyone})
+              return instance.balances(carol, {from: anyone})
             })
             .then(balance => {
               assert.equal(balance, 0, "Carol initial Splitter balance should be 0")
@@ -70,18 +72,18 @@ contract("Splitter", function() {
       });
 
       it("depositForSplitDonation (even donation)", function() {
-        return instance.depositForSplitDonation(bob, carol, {from: alice, value: 4})
+        return instance.splitDonation(bob, carol, {from: alice, value: 4})
           .then(txObj => {
-            assert.equal(txObj.logs[0].event, "DepositForSplitDonationEvent", "depositForSplitDonation(..) failed")
-            return instance.viewBalance(alice, {from: anyone})
+            assert.equal(txObj.logs[0].event, "SplitDonationEvent", "splitDonation(..) failed")
+            return instance.balances(alice, {from: anyone})
           })
           .then(balance => {
             assert.equal(balance, 0, "Alice final Splitter balance should be 0")
-            return instance.viewBalance(carol, {from: anyone})
+            return instance.balances(carol, {from: anyone})
           })
           .then(balance => {
             assert.equal(balance, 2, "Bob final Splitter balance should be 2")
-            return instance.viewBalance(carol, {from: anyone})
+            return instance.balances(carol, {from: anyone})
           })
           .then(balance => {
             assert.equal(balance, 2, "Carol final Splitter balance should be 2")
@@ -89,18 +91,18 @@ contract("Splitter", function() {
       });
 
       it("depositForSplitDonation (odd donation)", function() {
-        return instance.depositForSplitDonation(bob, carol, {from: alice, value: 5})
+        return instance.splitDonation(bob, carol, {from: alice, value: 5})
           .then(txObj => {
-            assert.equal(txObj.logs[0].event, "DepositForSplitDonationEvent", "depositForSplitDonation(..) failed")
-            return instance.viewBalance(alice, {from: anyone})
+            assert.equal(txObj.logs[0].event, "SplitDonationEvent", "splitDonation(..) failed")
+            return instance.balances(alice, {from: anyone})
           })
           .then(balance => {
             assert.equal(balance, 1, "Alice final Splitter balance should be 1")
-            return instance.viewBalance(carol, {from: anyone})
+            return instance.balances(carol, {from: anyone})
           })
           .then(balance => {
             assert.equal(balance, 2, "Bob final Splitter balance should be 2")
-            return instance.viewBalance(carol, {from: anyone})
+            return instance.balances(carol, {from: anyone})
           })
           .then(balance => {
             assert.equal(balance, 2, "Carol final Splitter balance should be 2")

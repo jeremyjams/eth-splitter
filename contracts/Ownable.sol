@@ -27,4 +27,8 @@ contract Ownable {
         return true;
     }
 
+    function getOwner() public pure returns (address owner){
+        return owner;
+    }
+
 }
