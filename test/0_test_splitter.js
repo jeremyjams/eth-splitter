@@ -1,5 +1,7 @@
 const Splitter = artifacts.require("./Splitter.sol");
-Promise = require("bluebird");
+const Promise = require("bluebird");
+const truffleAssert = require('truffle-assertions');
+
 Promise.promisifyAll(web3.eth, { suffix: "Promise" });
 
 // ganache-cli --accounts=10 --host=0.0.0.0
@@ -17,7 +19,7 @@ contract("Splitter", function() {
       let anyone;
 
       beforeEach("Fresh contract & accounts", function() {
-        return Splitter.new()
+        return Splitter.new(false)
             .then(_instance => {
                 instance = _instance;
                 return instance.getOwner();
@@ -74,7 +76,8 @@ contract("Splitter", function() {
       it("depositForSplitDonation (even donation)", function() {
         return instance.splitDonation(bob, carol, {from: alice, value: 4})
           .then(txObj => {
-            assert.equal(txObj.logs[0].event, "SplitDonationEvent", "splitDonation(..) failed")
+            //truffleAssert.prettyPrintEmittedEvents(txObj);
+            truffleAssert.eventEmitted(txObj, 'SplitDonationEvent');
             return instance.balances(alice, {from: anyone})
           })
           .then(balance => {
@@ -93,7 +96,7 @@ contract("Splitter", function() {
       it("depositForSplitDonation (odd donation)", function() {
         return instance.splitDonation(bob, carol, {from: alice, value: 5})
           .then(txObj => {
-            assert.equal(txObj.logs[0].event, "SplitDonationEvent", "splitDonation(..) failed")
+            truffleAssert.eventEmitted(txObj, 'SplitDonationEvent');
             return instance.balances(alice, {from: anyone})
           })
           .then(balance => {
