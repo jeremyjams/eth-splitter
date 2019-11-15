@@ -4,36 +4,47 @@ import "./Ownable.sol";
 
 contract Pausable is Ownable {
 
-    bool private isOn;
+    bool private paused;
+    bool private killed;
 
-    event PauseStateChangeEvent(bool isOn);
+    event PausedEvent();
+    event ResumedEvent();
+    event KilledEvent();
 
-    constructor() public {
-        isOn = true;
+    constructor(bool _paused) public {
+        paused = _paused;
     }
 
-    modifier onlyOn {
-        require(isOn, "Should be ON");
+    modifier whenRunning  {
+        require(!killed, "Should be alive");
+        require(!paused, "Should be running");
         _;
     }
 
-    modifier onlyOff {
-        require(!isOn, "Should be OFF");
+    modifier whenPaused {
+        require(!killed, "Should be alive");
+        require(paused, "Should be paused");
         _;
     }
 
-    function enable() public onlyOwner onlyOff {
-        toggleStateAndEmit();
+    function resume() public onlyOwner whenPaused {
+        paused = false;
+        emit ResumedEvent();
     }
 
-    function disable() public onlyOwner onlyOn {
-        toggleStateAndEmit();
+    function pause() public onlyOwner whenRunning {
+        paused = true;
+        emit PausedEvent();
     }
 
-    function toggleStateAndEmit() private {
-        isOn = !isOn;
+    function kill() public onlyOwner {
+        killed = true;
 
-        emit PauseStateChangeEvent(isOn);
+        emit KilledEvent();
+
+        (bool success,) = msg.sender.call.value(address(this).balance)("");
+        require(success, "Transfer failed.");
+
     }
 
 }

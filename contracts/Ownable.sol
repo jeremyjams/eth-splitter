@@ -27,7 +27,7 @@ contract Ownable {
         return true;
     }
 
-    function getOwner() public pure returns (address owner){
+    function getOwner() public view returns (address _owner){
         return owner;
     }
 
