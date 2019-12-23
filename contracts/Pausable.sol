@@ -10,9 +10,11 @@ contract Pausable is Ownable {
     event PausedEvent();
     event ResumedEvent();
     event KilledEvent();
+    event WithdrawAfterKilledEvent(uint256);
 
     constructor(bool _paused) public {
         paused = _paused;
+        killed = false;
     }
 
     modifier whenRunning  {
@@ -27,6 +29,11 @@ contract Pausable is Ownable {
         _;
     }
 
+    modifier whenKilled  {
+        require(killed, "Should be killed");
+        _;
+    }
+
     function resume() public onlyOwner whenPaused {
         paused = false;
         emit ResumedEvent();
@@ -37,14 +44,20 @@ contract Pausable is Ownable {
         emit PausedEvent();
     }
 
-    function kill() public onlyOwner {
+    function kill() public onlyOwner whenPaused {
         killed = true;
 
         emit KilledEvent();
+    }
 
-        (bool success,) = msg.sender.call.value(address(this).balance)("");
-        require(success, "Transfer failed.");
+    function withdrawAfterKill() public onlyOwner whenKilled returns (bool success) {
+        require(address(this).balance > 0, "Empty balance");
 
+        emit WithdrawAfterKilledEvent(address(this).balance);
+        (bool _success,) = msg.sender.call.value(address(this).balance)("");
+        require(_success, "Transfer failed.");
+
+        return true;
     }
 
 }

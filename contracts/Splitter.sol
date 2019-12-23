@@ -26,8 +26,8 @@ contract Splitter is Pausable {
 
         uint halfDonation = SafeMath.div(msg.value, 2);
 
-        balances[beneficiaryA] += halfDonation;
-        balances[beneficiaryB] += halfDonation;
+        balances[beneficiaryA] = SafeMath.add(balances[beneficiaryA], halfDonation);
+        balances[beneficiaryB] = SafeMath.add(balances[beneficiaryB], halfDonation);
         emit SplitDonationEvent(msg.sender, msg.value, beneficiaryA, beneficiaryB);
 
         return true;
