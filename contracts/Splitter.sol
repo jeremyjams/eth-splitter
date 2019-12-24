@@ -1,66 +1,48 @@
 pragma solidity >=0.4.21 <0.6.0;
 
-contract Splitter {
+import "./Ownable.sol";
+import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./Pausable.sol";
 
-  address public owner;
-  mapping (address => uint) private balances;
-  event DepositForSplitDonationEvent(address donator, uint donation, address beneficiaryA, address beneficiaryB);
-  event TopUpBalanceEvent(address beneficiary, uint amount, address donator);
-  event WithdrawBalanceEvent(address withdrawer, uint amount);
+contract Splitter is Pausable {
 
-  constructor() public {
-    owner = msg.sender;//isnt required, just for information
-  }
+    mapping(address => uint) public balances;
 
-  function viewBalance() public view returns (uint balance) {
-    return balances[msg.sender];
-  }
+    event SplitDonationEvent(address indexed giver, uint donation, address beneficiaryA, address beneficiaryB);
+    event WithdrawEvent(address indexed withdrawer, uint amount);
 
-  function viewBalance(address account) public view returns (uint balance) {
-    return balances[account];
-  }
+    constructor(bool paused) Pausable(paused) public {}
 
-  function depositForSplitDonation(address beneficiaryA, address beneficiaryB)
-  public payable returns (bool success) {
-    address payable donator = msg.sender;
-    uint donation = msg.value;
+    function splitDonation(address beneficiaryA, address beneficiaryB) public whenRunning payable returns (bool success) {
+        require(beneficiaryA != address(0));
+        require(beneficiaryB != address(0));
+        require(msg.value > 0);
 
-    require(donation > 0);
-    require(beneficiaryA != address(0));
-    require(beneficiaryB != address(0));
+        //Probably should remove this block to save gas since we just talking about 1wei
+        if (SafeMath.mod(msg.value, 2) != 0) {//odd amount
+            //sender receives 1 wei back in his Splitter balance
+            balances[msg.sender] = SafeMath.add(balances[msg.sender], 1);
+        }
 
-    emit DepositForSplitDonationEvent(donator, donation, beneficiaryA, beneficiaryB);
+        uint halfDonation = SafeMath.div(msg.value, 2);
 
-    if(donation % 2 != 0){//odd amount
-      donation = donation--;//lets make the donation even
-      balances[donator]++; //sender receives 1 wei back in his balance
-      emit TopUpBalanceEvent(donator, 1, donator);
+        balances[beneficiaryA] = SafeMath.add(balances[beneficiaryA], halfDonation);
+        balances[beneficiaryB] = SafeMath.add(balances[beneficiaryB], halfDonation);
+        emit SplitDonationEvent(msg.sender, msg.value, beneficiaryA, beneficiaryB);
+
+        return true;
     }
 
-    uint halfDonation = donation / 2;
+    function withdraw() public whenRunning returns (bool success) {
+        require(balances[msg.sender] > 0);
 
-    balances[beneficiaryA] += halfDonation;
-    balances[beneficiaryB] += halfDonation;
+        uint withdrawal = balances[msg.sender];
+        balances[msg.sender] = 0;
+        emit WithdrawEvent(msg.sender, withdrawal);
+        (bool _success,) = msg.sender.call.value(withdrawal)("");
+        require(_success, "Transfer failed.");
 
-    emit TopUpBalanceEvent(beneficiaryA, halfDonation, donator);
-    emit TopUpBalanceEvent(beneficiaryB, halfDonation, donator);
-
-    return true;
-  }
-
-  function withdraw() public returns (bool success) {
-    address payable withdrawer = msg.sender;
-
-    require(balances[withdrawer] > 0);
-
-    uint withdrawal = balances[withdrawer];
-    balances[withdrawer] = 0;
-
-    emit WithdrawBalanceEvent(withdrawer, withdrawal);
-
-    withdrawer.transfer(withdrawal);
-
-    return true;
-  }
+        return true;
+    }
 
 }
