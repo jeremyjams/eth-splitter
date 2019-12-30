@@ -6,6 +6,7 @@ import "./Pausable.sol";
 
 contract Splitter is Pausable {
 
+    using SafeMath for uint;
     mapping(address => uint) public balances;
 
     event SplitDonationEvent(address indexed giver, uint donation, address beneficiaryA, address beneficiaryB);
@@ -21,28 +22,26 @@ contract Splitter is Pausable {
         //Probably should remove this block to save gas since we just talking about 1wei
         if (SafeMath.mod(msg.value, 2) != 0) {//odd amount
             //sender receives 1 wei back in his Splitter balance
-            balances[msg.sender] = SafeMath.add(balances[msg.sender], 1);
+            balances[msg.sender] = balances[msg.sender].add(1);
         }
 
         uint halfDonation = SafeMath.div(msg.value, 2);
 
-        balances[beneficiaryA] = SafeMath.add(balances[beneficiaryA], halfDonation);
-        balances[beneficiaryB] = SafeMath.add(balances[beneficiaryB], halfDonation);
+        balances[beneficiaryA] = balances[beneficiaryA].add(halfDonation);
+        balances[beneficiaryB] = balances[beneficiaryB].add(halfDonation);
         emit SplitDonationEvent(msg.sender, msg.value, beneficiaryA, beneficiaryB);
 
         return true;
     }
 
     function withdraw() public whenRunning returns (bool success) {
-        require(balances[msg.sender] > 0);
-
         uint withdrawal = balances[msg.sender];
+        require(withdrawal > 0);
+
         balances[msg.sender] = 0;
         emit WithdrawEvent(msg.sender, withdrawal);
-        (bool _success,) = msg.sender.call.value(withdrawal)("");
-        require(_success, "Transfer failed.");
-
-        return true;
+        (success,) = msg.sender.call.value(withdrawal)("");
+        require(success, "Transfer failed.");
     }
 
 }

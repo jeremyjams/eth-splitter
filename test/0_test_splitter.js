@@ -1,7 +1,9 @@
 const Splitter = artifacts.require("./Splitter.sol");
 const Promise = require("bluebird");
 const truffleAssert = require('truffle-assertions');
-const BN = require('bn.js');
+
+const BN = require('bn.js')
+require('chai').use(require('chai-bn')(BN)).should();
 
 Promise.promisifyAll(web3.eth, { suffix: "Promise" });
 
@@ -10,73 +12,90 @@ Promise.promisifyAll(web3.eth, { suffix: "Promise" });
 contract("Splitter", function() {
     describe("Testting Splitter contract", function() {
 
-        let splitter;
-        let alice;
-        let bob;
-        let carol;
-        let anyone;
+        let splitter, alice, bob, carol, anyone;
 
         beforeEach("Fresh contract & accounts", async function() {
-            splitter = await Splitter.new(false)
+            let accounts = await web3.eth.getAccountsPromise()
+            alice = accounts[1]
+            bob = accounts[2]
+            carol = accounts[3]
+            anyone = accounts[9]
+            const ONE_MILLION_WEI = new BN(1000000)
 
-            let accounts = await web3.eth.getAccountsPromise();
-            alice = accounts[1];
-            bob = accounts[2];
-            carol = accounts[3];
-            anyone = accounts[9];
+            const aliceWeiBalance = await web3.eth.getBalancePromise(alice)
+            //const aliceBalance = await web3.utils.fromWei(aliceWeiBalance)
+            aliceWeiBalance.should.be.bignumber.greaterThan(ONE_MILLION_WEI)
 
-            let aliceWeiBalance = await web3.eth.getBalancePromise(alice)
-            let aliceBalance = await web3.utils.fromWei(aliceWeiBalance)
-            assert.isTrue(aliceBalance.toString(10) > "10", "Alice is broke");
+            const bobWeiBalance = await web3.eth.getBalancePromise(bob)
+            bobWeiBalance.should.be.bignumber.greaterThan(ONE_MILLION_WEI)
 
-            let bobWeiBalance = await web3.eth.getBalancePromise(bob)
-            let bobBalance = await web3.utils.fromWei(bobWeiBalance)
-            assert.isTrue(bobBalance.toString(10) > "10", "Bob is broke");
+            const carolWeiBalance = await web3.eth.getBalancePromise(carol)
+            carolWeiBalance.should.be.bignumber.greaterThan(ONE_MILLION_WEI)
 
-            let carolWeiBalance = await web3.eth.getBalancePromise(carol)
-            let carolBalance = await web3.utils.fromWei(carolWeiBalance)
-            assert.isTrue(carolBalance.toString(10) > "10", "Carol is broke");
+            splitter = await Splitter.new(false, {from: alice})
 
-            let aliceSplitterBalance = await splitter.balances.call(alice, {from: anyone})
-            assert.equal(aliceSplitterBalance, 0, "Alice initial Splitter balance should be 0")
+            const aliceSplitterBalance = await splitter.balances.call(alice, {from: anyone})
+            assert.strictEqual(aliceSplitterBalance.toString(10), "0", "Alice initial Splitter balance should be 0")
 
-            let bobSplitterBalance = await splitter.balances.call(bob, {from: anyone})
-            assert.equal(bobSplitterBalance, 0, "Bob initial Splitter balance should be 0")
+            const bobSplitterBalance = await splitter.balances.call(bob, {from: anyone})
+            assert.strictEqual(bobSplitterBalance.toString(10), "0", "Bob initial Splitter balance should be 0")
 
-            let carolSplitterBalance = await splitter.balances.call(carol, {from: anyone})
-            assert.equal(carolSplitterBalance, 0, "Carol initial Splitter balance should be 0")
+            const carolSplitterBalance = await splitter.balances.call(carol, {from: anyone})
+            assert.strictEqual(carolSplitterBalance.toString(10), "0", "Carol initial Splitter balance should be 0")
         });
 
         /*
         * Split
         */
         it("splitDonation (even donation)", async function() {
-            let txObj = await  splitter.splitDonation(bob, carol, {from: alice, value: 4})
+            const txObj = await  splitter.splitDonation(bob, carol, {from: alice, value: 4})
             //truffleAssert.prettyPrintEmittedEvents(txObj);
             truffleAssert.eventEmitted(txObj, 'SplitDonationEvent');//could check content here
 
-            let aliceBalance = await splitter.balances(alice, {from: anyone})
-            assert.equal(aliceBalance, 0, "Alice final Splitter balance should be 0")
+            const aliceBalance = await splitter.balances(alice, {from: anyone})
+            assert.strictEqual(aliceBalance.toString(10), "0", "Alice final Splitter balance should be 0")
 
-            let bobBalance = await splitter.balances(bob, {from: anyone})
-            assert.equal(bobBalance, 2, "Bob final Splitter balance should be 2")
+            const bobBalance = await splitter.balances(bob, {from: anyone})
+            assert.strictEqual(bobBalance.toString(10), "2", "Bob final Splitter balance should be 2")
 
-            let carolBalance = await splitter.balances(carol, {from: anyone})
-            assert.equal(carolBalance, 2, "Carol final Splitter balance should be 2")
+            const carolBalance = await splitter.balances(carol, {from: anyone})
+            assert.strictEqual(carolBalance.toString(10), "2", "Carol final Splitter balance should be 2")
         });
 
         it("splitDonation (odd donation)", async function() {
-            let txObj = await  splitter.splitDonation(bob, carol, {from: alice, value: 5})
+            const txObj = await  splitter.splitDonation(bob, carol, {from: alice, value: 5})
             truffleAssert.eventEmitted(txObj, 'SplitDonationEvent');//could check content here
 
+            const aliceBalance = await splitter.balances(alice, {from: anyone})
+            assert.strictEqual(aliceBalance.toString(10), "1", "Alice final Splitter balance should be 1")
+
+            const bobBalance = await splitter.balances(bob, {from: anyone})
+            assert.strictEqual(bobBalance.toString(10), "2", "Bob final Splitter balance should be 2")
+
+            const carolBalance = await splitter.balances(carol, {from: anyone})
+            assert.strictEqual(carolBalance.toString(10), "2", "Carol final Splitter balance should be 2")
+        });
+
+        it("splitDonation (non empty beneficiary balance)", async function() {
+            //Let's create a non empty balance on bob & carol (1st split)
+            const split1txObj = await  splitter.splitDonation(bob, carol, {from: alice, value: 4})
+            truffleAssert.eventEmitted(split1txObj, 'SplitDonationEvent');
             let aliceBalance = await splitter.balances(alice, {from: anyone})
-            assert.equal(aliceBalance, 1, "Alice final Splitter balance should be 1")
-
+            assert.strictEqual(aliceBalance.toString(10), "0", "Alice final Splitter balance should be 0")
             let bobBalance = await splitter.balances(bob, {from: anyone})
-            assert.equal(bobBalance, 2, "Bob final Splitter balance should be 2")
-
+            assert.strictEqual(bobBalance.toString(10), "2", "Bob final Splitter balance should be 2")
             let carolBalance = await splitter.balances(carol, {from: anyone})
-            assert.equal(carolBalance, 2, "Carol final Splitter balance should be 2")
+            assert.strictEqual(carolBalance.toString(10), "2", "Carol final Splitter balance should be 2")
+
+            //Let's try a 2nd split
+            const split2txObj = await  splitter.splitDonation(bob, carol, {from: alice, value: 4})
+            truffleAssert.eventEmitted(split2txObj, 'SplitDonationEvent');
+            aliceBalance = await splitter.balances(alice, {from: anyone})
+            assert.strictEqual(aliceBalance.toString(10), "0", "Alice final Splitter balance should be 0")
+            bobBalance = await splitter.balances(bob, {from: anyone})
+            assert.strictEqual(bobBalance.toString(10), "4", "Bob final Splitter balance should be 4")
+            carolBalance = await splitter.balances(carol, {from: anyone})
+            assert.strictEqual(carolBalance.toString(10), "4", "Carol final Splitter balance should be 4")
         });
 
         //TODO add bad depositForSplitDonation tests
@@ -86,30 +105,30 @@ contract("Splitter", function() {
         * Withdraw
         */
         it("Withdraw ", async function() {
-            let txObj = await splitter.splitDonation(bob, carol, {from: alice, value: 4});
+            const txObj = await splitter.splitDonation(bob, carol, {from: alice, value: 4});
             truffleAssert.eventEmitted(txObj, 'SplitDonationEvent');
 
             //wallet before
-            let balanceBefore = await web3.eth.getBalancePromise(carol);
+            const balanceBefore = await web3.eth.getBalancePromise(carol);
 
             //top up some funds
-            let splitterBalance = await splitter.balances(carol, {from: anyone})
-            assert.equal(splitterBalance, 2, "Carol final Splitter balance should be 2")
+            const splitterBalance = await splitter.balances(carol, {from: anyone})
+            assert.strictEqual(splitterBalance.toString(10), "2", "Carol final Splitter balance should be 2")
 
             //lets withdraw
-            let receipt = await splitter.withdraw({from: carol})
-            let gasUsed = receipt.receipt.gasUsed;
-            let tx = await web3.eth.getTransaction(receipt.tx);
-            let gasPrice = tx.gasPrice;
+            const receipt = await splitter.withdraw({from: carol})
+            const withdrawGasUsed = receipt.receipt.gasUsed;
+            const tx = await web3.eth.getTransaction(receipt.tx);
+            const withdrawGasPrice = tx.gasPrice;
             truffleAssert.eventEmitted(receipt, 'WithdrawEvent');
 
             //wallet after
-            let balanceAfter = await web3.eth.getBalancePromise(carol);
-            let withdrawCost = gasUsed * gasPrice ;
+            const balanceAfter = await web3.eth.getBalancePromise(carol);
+            const withdrawCost = withdrawGasUsed * withdrawGasPrice ;
 
-            let effectiveWithdrawal = new BN(balanceAfter).sub(new BN(balanceBefore)).add(new BN(withdrawCost)).toString(10);
+            const effectiveWithdrawal = new BN(balanceAfter).sub(new BN(balanceBefore)).add(new BN(withdrawCost)).toString(10);
 
-            assert.equal(effectiveWithdrawal, 2);
+            assert.strictEqual(effectiveWithdrawal.toString(10), "2");
         });
 
     });

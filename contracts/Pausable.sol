@@ -4,17 +4,16 @@ import "./Ownable.sol";
 
 contract Pausable is Ownable {
 
-    bool private paused;
-    bool private killed;
+    bool paused;
+    bool killed;//false by default
 
-    event PausedEvent();
-    event ResumedEvent();
-    event KilledEvent();
-    event WithdrawAfterKilledEvent(uint256);
+    event PausedEvent(address indexed pauser);
+    event ResumedEvent(address indexed resumer);
+    event KilledEvent(address indexed killer);
+    event PurgedEvent(address indexed purger, uint256 purgedAmount);
 
     constructor(bool _paused) public {
         paused = _paused;
-        killed = false;
     }
 
     modifier whenRunning  {
@@ -36,28 +35,26 @@ contract Pausable is Ownable {
 
     function resume() public onlyOwner whenPaused {
         paused = false;
-        emit ResumedEvent();
+        emit ResumedEvent(msg.sender);
     }
 
     function pause() public onlyOwner whenRunning {
         paused = true;
-        emit PausedEvent();
+        emit PausedEvent(msg.sender);
     }
 
     function kill() public onlyOwner whenPaused {
         killed = true;
 
-        emit KilledEvent();
+        emit KilledEvent(msg.sender);
     }
 
-    function withdrawAfterKill() public onlyOwner whenKilled returns (bool success) {
+    function purge() public onlyOwner whenKilled returns (bool success) {
         require(address(this).balance > 0, "Empty balance");
 
-        emit WithdrawAfterKilledEvent(address(this).balance);
-        (bool _success,) = msg.sender.call.value(address(this).balance)("");
-        require(_success, "Transfer failed.");
-
-        return true;
+        emit PurgedEvent(msg.sender, address(this).balance);
+        (success,) = msg.sender.call.value(address(this).balance)("");
+        require(success, "Transfer failed.");
     }
 
 }
