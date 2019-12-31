@@ -4,8 +4,8 @@ import "./Ownable.sol";
 
 contract Pausable is Ownable {
 
-    bool paused;
-    bool killed;//false by default
+    bool private paused;
+    bool private killed;//false by default
 
     event PausedEvent(address indexed pauser);
     event ResumedEvent(address indexed resumer);
@@ -14,6 +14,14 @@ contract Pausable is Ownable {
 
     constructor(bool _paused) public {
         paused = _paused;
+    }
+
+    function isPaused() public view returns (bool _paused) {
+        return paused;
+    }
+
+    function isKilled() public view returns (bool _killed) {
+        return killed;
     }
 
     modifier whenRunning  {

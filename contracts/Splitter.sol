@@ -1,8 +1,9 @@
 pragma solidity >=0.4.21 <0.6.0;
 
 import "./Ownable.sol";
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./Pausable.sol";
+import "./SafeMath.sol";
+//import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract Splitter is Pausable {
 
@@ -19,13 +20,14 @@ contract Splitter is Pausable {
         require(beneficiaryB != address(0));
         require(msg.value > 0);
 
-        //Probably should remove this block to save gas since we just talking about 1wei
-        if (SafeMath.mod(msg.value, 2) != 0) {//odd amount
-            //sender receives 1 wei back in his Splitter balance
-            balances[msg.sender] = balances[msg.sender].add(1);
+        //Probably should remove this block to save gas since we're just talking about 1wei
+        uint remainder = msg.value.mod(2);
+        if (remainder != 0) {
+            //sender receives remainder (1 wei for 2 players) back in his Splitter balance
+            balances[msg.sender] = balances[msg.sender].add(remainder);
         }
 
-        uint halfDonation = SafeMath.div(msg.value, 2);
+        uint halfDonation = msg.value.div(2);
 
         balances[beneficiaryA] = balances[beneficiaryA].add(halfDonation);
         balances[beneficiaryB] = balances[beneficiaryB].add(halfDonation);
