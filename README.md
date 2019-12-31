@@ -12,6 +12,9 @@ ETH Splitter
 `Splitter.deployed().then(instance => instance.viewBalance(accounts[1], {from: accounts[0]}))`
 * Alice can use the Web page to split her ether.
 
+WepApp
+`./node_modules/.bin/webpack-cli --mode development && npx http-server ./build/app/ -a 0.0.0.0 -p 8888 -c-1`
+
 
 
 `code` from Truffle
