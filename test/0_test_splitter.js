@@ -1,13 +1,13 @@
 const Splitter = artifacts.require("./Splitter.sol");
 const truffleAssert = require('truffle-assertions');
 
-const { BN } = web3.utils
+const { BN, toBN } = web3.utils
 require('chai').use(require('chai-bn')(BN)).should();
 
 // ganache-cli --accounts=10 --host=0.0.0.0
 
 contract("Splitter", accounts => {
-    describe("Testting Splitter contract", () => {
+    describe("Testing Splitter contract", () => {
 
         let splitter, alice, bob, carol, anyone;
 
@@ -16,7 +16,7 @@ contract("Splitter", accounts => {
             bob = accounts[2]
             carol = accounts[3]
             anyone = accounts[9]
-            const ONE_MILLION_WEI = new BN(1000000)
+            const ONE_MILLION_WEI = toBN(1000000)
 
             splitter = await Splitter.new(false, {from: alice})
 
@@ -48,7 +48,7 @@ contract("Splitter", accounts => {
             const txObj = await  splitter.splitDonation(bob, carol, {from: alice, value: 4})
             //truffleAssert.prettyPrintEmittedEvents(txObj);
             truffleAssert.eventEmitted(txObj, 'SplitDonationEvent',
-            { giver: alice, donation: web3.utils.toBN(4), beneficiaryA: bob, beneficiaryB: carol});
+            { giver: alice, donation: toBN(4), beneficiaryA: bob, beneficiaryB: carol});
             //console.log(txObj.logs[0])
 
             const aliceBalance = await splitter.balances(alice, {from: anyone})
@@ -65,7 +65,7 @@ contract("Splitter", accounts => {
         it("splitDonation (odd donation)", async () => {
             const txObj = await  splitter.splitDonation(bob, carol, {from: alice, value: 5})
             truffleAssert.eventEmitted(txObj, 'SplitDonationEvent',
-            { giver: alice, donation: web3.utils.toBN(5), beneficiaryA: bob, beneficiaryB: carol});
+            { giver: alice, donation: toBN(5), beneficiaryA: bob, beneficiaryB: carol});
 
             const aliceBalance = await splitter.balances(alice, {from: anyone})
             assert.strictEqual(aliceBalance.toString(10), "1", "Alice final Splitter balance should be 1")
@@ -85,7 +85,7 @@ contract("Splitter", accounts => {
             //Let's try a 2nd split
             const split2txObj = await  splitter.splitDonation(bob, carol, {from: alice, value: 4})
             truffleAssert.eventEmitted(split2txObj, 'SplitDonationEvent',
-            { giver: alice, donation: web3.utils.toBN(4), beneficiaryA: bob, beneficiaryB: carol});
+            { giver: alice, donation: toBN(4), beneficiaryA: bob, beneficiaryB: carol});
             const aliceBalance = await splitter.balances(alice, {from: anyone})
             assert.strictEqual(aliceBalance.toString(10), "0", "Alice final Splitter balance should be 0")
             const bobBalance = await splitter.balances(bob, {from: anyone})
@@ -104,7 +104,7 @@ contract("Splitter", accounts => {
             //Let's try a 2nd split
             const split2txObj = await splitter.splitDonation(bob, carol, {from: alice, value: 10})
             truffleAssert.eventEmitted(split2txObj, 'SplitDonationEvent',
-            { giver: alice, donation: web3.utils.toBN(10), beneficiaryA: bob, beneficiaryB: carol});
+            { giver: alice, donation: toBN(10), beneficiaryA: bob, beneficiaryB: carol});
 
             const aliceBalance = await splitter.balances(alice, {from: anyone})
             assert.strictEqual(aliceBalance.toString(10), "0", "Alice final Splitter balance should be 0")
@@ -139,10 +139,10 @@ contract("Splitter", accounts => {
 
             //wallet after
             const balanceAfter = await web3.eth.getBalance(carol);
-            const withdrawCost = web3.utils.toBN(withdrawGasUsed).mul(web3.utils.toBN(withdrawGasPrice));
+            const withdrawCost = toBN(withdrawGasUsed).mul(toBN(withdrawGasPrice));
 
-            const effectiveWithdrawal = web3.utils.toBN(balanceAfter).sub(web3.utils.toBN(balanceBefore))
-                .add(web3.utils.toBN(withdrawCost)).toString(10);
+            const effectiveWithdrawal = toBN(balanceAfter).sub(toBN(balanceBefore))
+                .add(toBN(withdrawCost)).toString(10);
 
             assert.strictEqual(effectiveWithdrawal.toString(10), "2");
         });

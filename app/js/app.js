@@ -1,7 +1,7 @@
 const Web3 = require("web3");
 const truffleContract = require("truffle-contract");
 const $ = require("jquery");
-// Not to forget our built contract
+const Web3Utils = require('web3-utils');
 const splitterJson = require("../../build/contracts/Splitter.json");
 
 require("file-loader?name=../index.html!../index.html");
@@ -21,8 +21,23 @@ const Splitter = truffleContract(splitterJson);
 Splitter.setProvider(web3.currentProvider);
 
 window.addEventListener('load', async () => {
+
+    if (typeof ethereum !== 'undefined') {
+        try {
+            $("#allow-accounts").click(allowAccounts(await ethereum.enable()))
+            console.log("Using an Ethereum provider with EIP-1102")
+        } catch (e) {
+            console.error(e)
+        }
+    } else {
+        try {
+         allowAccounts(await window.web3.eth.getAccounts())
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
     try {
-        $("#allow-accounts").click(allowAccounts)
         $("#split").click(splitDonation)
         $("#refreshSomeoneBalance").click(refreshSomeoneBalance)
 
@@ -34,9 +49,8 @@ window.addEventListener('load', async () => {
     }
 });
 
-const allowAccounts = async () => {
+const allowAccounts = async (accounts) => {
     try {
-        const accounts = await web3.eth.getAccounts();
         if (accounts.length == 0) {
             throw new Error("No account with which to transact");
         }
@@ -45,8 +59,8 @@ const allowAccounts = async () => {
         const network = await web3.eth.net.getId();
         console.log("Network:", network.toString(10));
 
-        let account0Balance = await web3.eth.getBalance(accounts[0])
-        account0Balance = await web3.utils.fromWei(account0Balance)
+        const account0BalanceWei = await web3.eth.getBalance(accounts[0])
+        const account0Balance = await Web3Utils.fromWei(account0BalanceWei)
         $("#account0-address").html(window.account)
         $("#account0-balance").html(account0Balance.toString(10))
     } catch (e) {
