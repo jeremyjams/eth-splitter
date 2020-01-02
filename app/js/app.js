@@ -22,24 +22,37 @@ Splitter.setProvider(web3.currentProvider);
 
 window.addEventListener('load', async () => {
     try {
+        $("#allow-accounts").click(allowAccounts)
+        $("#split").click(splitDonation)
+        $("#refreshSomeoneBalance").click(refreshSomeoneBalance)
+
+        const deployed = await Splitter.deployed();
+        const balance = await web3.eth.getBalance(deployed.address)
+        $("#contract-splitter-balance").html(balance.toString(10))
+    } catch (e) {
+        console.error(e)
+    }
+});
+
+const allowAccounts = async () => {
+    try {
         const accounts = await web3.eth.getAccounts();
         if (accounts.length == 0) {
-            $("#contract-splitter-balance").html("N/A");
             throw new Error("No account with which to transact");
         }
         window.account = accounts[0];
         console.log("Account:", window.account);
         const network = await web3.eth.net.getId();
         console.log("Network:", network.toString(10));
-        const deployed = await Splitter.deployed();
-        const balance = await web3.eth.getBalance(deployed.address)
-        $("#contract-splitter-balance").html(balance.toString(10))
-        $("#split").click(splitDonation)
-        $("#refreshSomeoneBalance").click(refreshSomeoneBalance)
+
+        let account0Balance = await web3.eth.getBalance(accounts[0])
+        account0Balance = await web3.utils.fromWei(account0Balance)
+        $("#account0-address").html(window.account)
+        $("#account0-balance").html(account0Balance.toString(10))
     } catch (e) {
         console.error(e)
     }
-});
+}
 
 const refreshSomeoneBalance = async () => {
     try {
