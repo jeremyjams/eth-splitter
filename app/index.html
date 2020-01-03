@@ -10,26 +10,26 @@
 <script src="js/app.js"></script>
 
 
-<div>
-    <button id="allow-accounts">Allow accounts</button>
-    Your balance on <span id="account0-address">XX</span> is <span id="account0-balance">XX</span> ETH
-</div>
+<div>Contract ETH balance: <span id="contract-eth-balance">N/A</span> ETH</div>
+<div>Your address: <span id="my-eth-address">N/A</span> <button id="allow-accounts">Allow accounts</button></div>
+<div>Your ETH balance: <span id="my-eth-balance">N/A</span> ETH</div>
+<div>Your Splitter balance: <span id="my-splitter-balance">N/A</span> ETH</div>
+<div>Someone <input id="someone" type="text" placeholder="0x0011223344556677889900112233445566778899"/> Splitter balance: <span id="someone-splitter-balance">N/A</span> ETH</div>
+<button id="refreshAllBalances">Refresh All</button>
 
-<div>Contract own balance is <span id="contract-splitter-balance">Loading...</span> ETH</div>
-
 <div>
-    Split <input name="amount" type="number" placeholder="0"/> ETH
+    Want to split funds in two? <input name="amount" type="number" placeholder="0"/> ETH
     for recipientA <input name="recipientA" type="text" placeholder="0x0011223344556677889900112233445566778899" />
     and recipientB <input name="recipientB" type="text" placeholder="0x0011223344556677889900112233445566778899" />
     <button id="split">Let's split</button>
 </div>
+
+
+<div>Want to withdraw all your Splitter balance? <button id="account0-withdraw-splitter-button">Let's withdraw</button></div>
+
 <div id="status"></div>
 
-<div>Balance of
-    <input id="someone" type="text" placeholder="0x0011223344556677889900112233445566778899" />
-    on Splitter contract is <span id="someone-splitter-balance">XX</span> ETH
-    <button id="refreshSomeoneBalance">Refresh</button>
-</div>
+
 
 </body>
 </html>

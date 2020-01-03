@@ -1,7 +1,6 @@
 const Web3 = require("web3");
 const truffleContract = require("truffle-contract");
 const $ = require("jquery");
-const Web3Utils = require('web3-utils');
 const splitterJson = require("../../build/contracts/Splitter.json");
 
 require("file-loader?name=../index.html!../index.html");
@@ -16,6 +15,8 @@ if (typeof ethereum !== 'undefined') {
     // Your preferred fallback.
     window.web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 }
+
+const { fromWei } = web3.utils
 
 const Splitter = truffleContract(splitterJson);
 Splitter.setProvider(web3.currentProvider);
@@ -39,11 +40,8 @@ window.addEventListener('load', async () => {
 
     try {
         $("#split").click(splitDonation)
-        $("#refreshSomeoneBalance").click(refreshSomeoneBalance)
-
-        const deployed = await Splitter.deployed();
-        const balance = await web3.eth.getBalance(deployed.address)
-        $("#contract-splitter-balance").html(balance.toString(10))
+        $("#refreshAllBalances").click(refreshAllBalances)
+        $("#refresh-my-splitter-balance").click(refreshMySplitterBalance)
     } catch (e) {
         console.error(e)
     }
@@ -58,24 +56,76 @@ const allowAccounts = async (accounts) => {
         console.log("Account:", window.account);
         const network = await web3.eth.net.getId();
         console.log("Network:", network.toString(10));
+        $("#my-eth-address").html(window.account)
 
-        const account0BalanceWei = await web3.eth.getBalance(accounts[0])
-        const account0Balance = await Web3Utils.fromWei(account0BalanceWei)
-        $("#account0-address").html(window.account)
-        $("#account0-balance").html(account0Balance.toString(10))
+        refreshAllBalances()
     } catch (e) {
         console.error(e)
     }
 }
 
-const refreshSomeoneBalance = async () => {
+//Lets keep distinct refresh functions in case of multiple refresh buttons
+const refreshContractEthBalance = async () => {
     try {
-        const deployed = await Splitter.deployed()
-        deployed.balances.call($("#someone").val())
-        $("#someone-splitter-balance").html(balance.toString(10))
+        const deployed = await Splitter.deployed();
+        const contractBalance = await web3.eth.getBalance(deployed.address);
+        $("#contract-eth-balance").html(contractBalance.toString(10));
     } catch (e) {
         console.error(e)
     }
+}
+
+const refreshMyEthBalance = async () => {
+    try {
+        const account0BalanceWei = await web3.eth.getBalance(window.account)
+        const account0Balance = await fromWei(account0BalanceWei)
+        $("#my-eth-balance").html(account0Balance.toString(10))
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+const refreshSplitterBalance = async () => {
+    try {
+        const deployed = await Splitter.deployed();
+        const balance = await web3.eth.getBalance(deployed.address)
+        $("#contract-eth-balance").html(balance.toString(10));
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+const refreshMySplitterBalance = async () => {
+    try {
+        const deployed = await Splitter.deployed();
+        const account0SplitterBalance = await deployed.balances.call(window.account)
+        $("#my-splitter-balance").html(account0SplitterBalance.toString(10))
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+const refreshSomeoneSplitterBalance = async () => {
+    try {
+        const deployed = await Splitter.deployed()
+        const someone = $("#someone").val()
+        if(someone != ""){
+            const balance = await deployed.balances.call(someone)
+            $("#someone-splitter-balance").html(balance.toString(10))
+        } else {
+            $("#someone-splitter-balance").html("N/A")
+        }
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+const refreshAllBalances = async () => {
+    await refreshContractEthBalance();
+    await refreshMyEthBalance();
+    await refreshSplitterBalance();
+    await refreshMySplitterBalance();
+    await refreshSomeoneSplitterBalance();
 }
 
 const splitDonation = async () => {
@@ -130,13 +180,7 @@ const splitDonation = async () => {
             $("#status").html("Transfer executed");
         }
 
-        //Display recipientA balance
-        $("#someone").val(recipientA)
-        const someoneBalance = await deployed.balances.call($("#someone").val()) //(could have called refresh)
-        $("#someone-splitter-balance").html(someoneBalance.toString(10));
-
-        const contractBalance = await web3.eth.getBalance(deployed.address);
-        $("#contract-splitter-balance").html(contractBalance.toString(10));
+        refreshAllBalances()
     } catch (e) {
         $("#status").html(e.toString());
         console.error(e);
