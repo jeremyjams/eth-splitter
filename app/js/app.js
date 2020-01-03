@@ -164,23 +164,8 @@ const splitDonation = async () => {
                 "transactionHash",
                 txHash => $("#status").html("Transaction on the way " + txHash)
             );
-
-        // Waiting for tx
-        const receipt = txObj.receipt;
-        console.log("got receipt", receipt);
-        if (!receipt.status) {
-            console.error("Wrong status");
-            console.error(receipt);
-            $("#status").html("There was an error in the tx execution, status not 1");
-        } else if (receipt.logs.length == 0) {
-            console.error("Empty logs");
-            console.error(receipt);
-            $("#status").html("There was an error in the tx execution, missing expected event");
-        } else {
-            console.log(receipt.logs[0]);
-            $("#status").html("Transfer executed");
-        }
-
+        //Waiting for tx
+        handleTxReceipt(txObj)
         refreshAllBalances()
     } catch (e) {
         $("#status").html(e.toString());
@@ -216,26 +201,27 @@ const withdraw = async () => {
                 "transactionHash",
                 txHash => $("#status").html("Transaction on the way " + txHash)
             );
-
-        // Waiting for tx
-        const receipt = txObj.receipt;
-        console.log("got receipt", receipt);
-        if (!receipt.status) {
-            console.error("Wrong status");
-            console.error(receipt);
-            $("#status").html("There was an error in the tx execution, status not 1");
-        } else if (receipt.logs.length == 0) {
-            console.error("Empty logs");
-            console.error(receipt);
-            $("#status").html("There was an error in the tx execution, missing expected event");
-        } else {
-            console.log(receipt.logs[0]);
-            $("#status").html("Transfer executed");
-        }
-
+        handleTxReceipt(txObj)
         refreshAllBalances()
     } catch (e) {
         $("#status").html(e.toString());
         console.error(e);
     }
 };
+
+const handleTxReceipt = (txObj) => {
+    const receipt = txObj.receipt;
+    console.log("got receipt", receipt);
+    if (!receipt.status) {
+        console.error("Wrong status");
+        console.error(receipt);
+        $("#status").html("There was an error in the tx execution, status not 1");
+    } else if (receipt.logs.length == 0) {
+        console.error("Empty logs");
+        console.error(receipt);
+        $("#status").html("There was an error in the tx execution, missing expected event");
+    } else {
+        console.log(receipt.logs[0]);
+        $("#status").html("Transfer executed");
+    }
+}
