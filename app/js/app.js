@@ -41,7 +41,7 @@ window.addEventListener('load', async () => {
     try {
         $("#split").click(splitDonation)
         $("#refreshAllBalances").click(refreshAllBalances)
-        $("#refresh-my-splitter-balance").click(refreshMySplitterBalance)
+        $("#withdraw").click(withdraw)
     } catch (e) {
         console.error(e)
     }
@@ -130,6 +130,7 @@ const refreshAllBalances = async () => {
 
 const splitDonation = async () => {
     try {
+        $("#status").html("");
         const gas = 300000;
 
         const amount = $("input[name='amount']").val()
@@ -185,5 +186,56 @@ const splitDonation = async () => {
         $("#status").html(e.toString());
         console.error(e);
     }
+};
 
+const withdraw = async () => {
+    try {
+        $("#status").html("");
+
+        const gas = 300000;
+
+        const deployed = await Splitter.deployed()
+        const mySplitterBalance = await deployed.balances.call(window.account)
+
+        if(mySplitterBalance.toString(10) == "0"){
+            throw new Error("Positive balance required for withdraw");
+        }
+
+        // Simulation first
+        const success = await deployed.withdraw.call(
+            { from: window.account, gas: gas }
+            );
+
+        if (!success) {
+            throw new Error("The transaction will fail anyway, not sending");
+        }
+        const txObj = await deployed.withdraw(
+             { from: window.account, gas: gas }
+           )
+            .on(
+                "transactionHash",
+                txHash => $("#status").html("Transaction on the way " + txHash)
+            );
+
+        // Waiting for tx
+        const receipt = txObj.receipt;
+        console.log("got receipt", receipt);
+        if (!receipt.status) {
+            console.error("Wrong status");
+            console.error(receipt);
+            $("#status").html("There was an error in the tx execution, status not 1");
+        } else if (receipt.logs.length == 0) {
+            console.error("Empty logs");
+            console.error(receipt);
+            $("#status").html("There was an error in the tx execution, missing expected event");
+        } else {
+            console.log(receipt.logs[0]);
+            $("#status").html("Transfer executed");
+        }
+
+        refreshAllBalances()
+    } catch (e) {
+        $("#status").html(e.toString());
+        console.error(e);
+    }
 };
